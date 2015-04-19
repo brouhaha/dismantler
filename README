@@ -80,9 +80,17 @@ USAGE EXAMPLES
 		 -p 0xF0 UART0 -p 0xF8 UART1 \
 		 rom.bin
 
+CREDITS
+
+    This page was very helpful:
+    http://z80.info/decoding.htm
+
+    This one was, too:
+    http://nemesis.lonestar.org/computers/tandy/software/apps/m4/qd/opcodes.html
+
 AUTHOR
 
-     Mark J. Blair, NF6X <nf6x@nf6x.net>
+    Mark J. Blair, NF6X <nf6x@nf6x.net>
 
 COPYRIGHT
 
