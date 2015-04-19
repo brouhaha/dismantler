@@ -35,7 +35,7 @@ def parse_int(x):
 class parse_label_def(argparse.Action):
     """Parse memory label definition."""
     def __call__(self, parser, args, values, option_string=None):
-        label, address = (values[0], parse_int(values[1]))
+        address, label  = (parse_int(values[0]), values[1])
         if args.labels is None:
             args.labels = {}
         args.labels[address] = label
@@ -43,7 +43,7 @@ class parse_label_def(argparse.Action):
 class parse_port_def(argparse.Action):
     """Parse port label definition."""
     def __call__(self, parser, args, values, option_string=None):
-        label, port = (values[0], parse_int(values[1]))
+        port, label  = (parse_int(values[0]), values[1])
         if args.ports is None:
             args.ports = {}
         args.ports[port] = label
@@ -91,13 +91,13 @@ if __name__ == '__main__':
                         help='Automatically create labels for probable jumps, calls and variables.')
     
     parser.add_argument('-l', '--label', action=parse_label_def, nargs=2, dest='labels',
-                        metavar=('LABEL', 'ADDRESS'),
+                        metavar=('ADDRESS', 'LABEL'),
                         help="""Define a memory address label.
                                 Flag may be used multiple times.
                                 If no labels are defined, default labels vary by CPU type.""")
     
     parser.add_argument('-p', '--port', action=parse_port_def, nargs=2, dest='ports',
-                        metavar=('LABEL', 'PORTNUM'),
+                        metavar=('PORTNUM', 'LABEL'),
                         help="""Define an IO port label.
                                 Flag may be used multiple times.
                                 Only applicable to CPUs with a separate IO space.
@@ -119,23 +119,25 @@ if __name__ == '__main__':
             print '  ' + cpu
         exit(0)
 
-    # Use default label map if no labels are specified and auto label mode is requested
-    if (args.labels is None) and (args.auto_label):
+    # Use default label map if auto label mode is requested, but let
+    # user-provided labels override its entries.
+    if args.auto_label:
         labels = dismantler.default_labels[args.cpu]
     else:
-        if args.labels is not None:
-            labels = args.labels
-        else:
-            labels = {}
+        labels = {}
+    if args.labels is not None:
+        for address in args.labels:
+            labels[address] = args.labels[address]
 
-    # Use default port map if none are specified and auto label mode is requested
-    if (args.ports is None) and (args.auto_label):
+    # Use default port map if auto label mode is requested, but let
+    # user-provided ports override its entries.
+    if args.auto_label:
         ports = dismantler.default_ports[args.cpu]
     else:
-        if args.ports is not None:
-            ports = args.ports
-        else:
-            ports = {}
+        ports = {}
+    if args.ports is not None:
+        for port in args.ports:
+            ports[port] = args.ports[port]
             
     # Use default entry list for CPU if no entries are specified
     if args.entry is None:
