@@ -77,15 +77,20 @@ if __name__ == '__main__':
                         choices=dismantler.cpus,
                         help='(REQUIRED) Specify CPU type.')
 
-    parser.add_argument('-b', '--base_address', action='store', type=parse_int, default=0,
+    parser.add_argument('-B', '--base_address', action='store', type=parse_int, default=0,
                         metavar='ADDRESS',
                         help='Specify base address of ROM image. Default = 0x0000.')
 
     parser.add_argument('-e', '--entry', action='append', type=parse_int,
-                        metavar='ADDRESS',
+                        metavar='ADDRESS', dest='entries',
                         help="""Specify an entry point for disassembly.
                                 Flag may be used multiple times.
                                 Default varies by CPU type.""")
+
+    parser.add_argument('-b', '--breakpoint', action='append', type=parse_int,
+                        metavar='ADDRESS', dest='breakpoints',
+                        help="""Specify breakpoints at which disassembly stops.
+                                Flag may be used multiple times.""")
 
     parser.add_argument('-a', '--auto_label', action='store_true',
                         help='Automatically create labels for probable jumps, calls and variables.')
@@ -102,6 +107,14 @@ if __name__ == '__main__':
                                 Flag may be used multiple times.
                                 Only applicable to CPUs with a separate IO space.
                                 If no labels are defined, default labels vary by CPU type.""")
+
+    parser.add_argument('-d', '--data8', action='append', type=parse_int,
+                        metavar='ADDRESS',
+                        help='Classify location as 8-bit data prior to disassembly.')
+
+    parser.add_argument('-w', '--data16', action='append', type=parse_int,
+                        metavar='ADDRESS',
+                        help='Classify location as 16-bit data prior to disassembly.')
 
     parser.add_argument('-s', '--source', action='store_true',
                         help='Output assembler source format instead of listing format.')
@@ -140,21 +153,42 @@ if __name__ == '__main__':
             ports[port] = args.ports[port]
             
     # Use default entry list for CPU if no entries are specified
-    if args.entry is None:
+    if args.entries is None:
         entries = dismantler.default_entries[args.cpu]
     else:
-        entries=args.entry
+        entries=args.entries
+
+    if args.breakpoints is not None:
+        breakpoints = args.breakpoints
+    else:
+        breakpoints = []
 
     # Read the binary ROM image
     rom_data = bytearray(args.bin_file.read())
     args.bin_file.close()
 
-    # Disassemble the ROM image
+    # Prepare the ROM image
     rom = dismantler.cpus[args.cpu](rom=rom_data,
                                     base_address=args.base_address,
                                     label_map=labels,
                                     port_map=ports)
-    rom.disassemble(entries=entries, create_labels=args.auto_label)
+
+
+
+    # Classify data locations
+    if args.data8 is not None:
+        for address in args.data8:
+            rom.set_data8(address)
+
+    if args.data16 is not None:
+        for address in args.data16:
+            rom.set_data16(address)
+
+    # Disassemble the ROM image
+    rom.disassemble(entries=entries, breakpoints=breakpoints,
+                    create_labels=args.auto_label)
+
+    # Generate and output the listing
     sys.stdout.write(rom.listing(source=args.source))
 
     # Done!

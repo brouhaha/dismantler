@@ -65,41 +65,30 @@ class rom_8085(rom_base.rom_base):
         # We just override the default label_map value here.
         rom_base.rom_base.__init__(self, rom, base_address, label_map, port_map)
 
-    def _set_data8(self, address, access_addr):
-        """Helper function: Classify location as 8-bit data."""
+    def set_data8(self, address, access_addr=None):
+        """Classify location as 8-bit data, Intel format.
 
-        idx = address - self.base_address
-        if (idx >= 0) and (idx < self.rom_len):
-            if (self.data_type[idx] is not rom_base.type_unknown) and (self.data_type[idx] is not rom_base.type_data8):
-                line = 'WARNING: Access from {:s} changed type {:s}->{:s}. '
-                line = line.format(util.hex16_intel(access_addr),
-                                   rom_base.type_names[self.data_type[idx]],
-                                   rom_base.type_names[rom_base.type_data8])
-                self.comments[idx] += line 
-            self.data_type[idx] = rom_base.type_data8
-            
+        Keyword arguments:
+        address     -- Address of location to reclassify.
+        access_addr -- Address of instruction which triggered this
+                       classification. Used for warning comment
+                       if change indicates probable disassembly error.
+        """
 
-    def _set_data16(self, address, access_addr):
-        """Helper function: Classify locations as 16-bit data."""
+        self._set_data8_intel(address, access_addr)
 
-        idx = address - self.base_address
-        if (idx >= 0) and (idx < self.rom_len):
-            if (self.data_type[idx] is not rom_base.type_unknown) and (self.data_type[idx] is not rom_base.type_data16L):
-                line = 'WARNING: Access from {:s} changed type {:s}->{:s}. '
-                line = line.format(util.hex16_intel(access_addr),
-                                   rom_base.type_names[self.data_type[idx]],
-                                   rom_base.type_names[rom_base.type_data16L])
-            self.data_type[idx] = rom_base.type_data16L
-        idx = idx + 1
-        if (idx >= 0) and (idx < self.rom_len):
-            if (self.data_type[idx] is not rom_base.type_unknown) and (self.data_type[idx] is not rom_base.type_data16H):
-                line = 'WARNING: Access from {:s} changed type {:s}->{:s}. '
-                line = line.format(util.hex16_intel(access_addr),
-                                   rom_base.type_names[self.data_type[idx]],
-                                   rom_base.type_names[rom_base.type_data16H])
-            self.data_type[idx] = rom_base.type_data16H
-            
-            
+    def set_data16(self, address, access_addr=None):
+        """Classify location as 16-bit little-endian data, Intel format.
+
+        Keyword arguments:
+        address     -- Address of LSB location to reclassify.
+        access_addr -- Address of instruction which triggered this
+                       classification. Used for warning comment
+                       if change indicates probable disassembly error.
+        """
+
+        self._set_data16_le_intel(address, access_addr)
+
 
     def disasm_single(self, address, create_label=True):
         """Disassemble a single instruction.
@@ -183,14 +172,14 @@ class rom_8085(rom_base.rom_base):
                         self.data_type[idx+1] = rom_base.type_operand
                         self.data_type[idx+2] = rom_base.type_operand
                         self.disassembly[idx] = 'SHLD {:s}'.format(self.lookup_a16_intel(word, create_label, 'D_'))
-                        self._set_data16(word, address)
+                        self.set_data16(word, address)
                         next_addrs = [address + 3]
                     else:
                         word = self.rom[idx+1] | (self.rom[idx+2] << 8)
                         self.data_type[idx+1] = rom_base.type_operand
                         self.data_type[idx+2] = rom_base.type_operand
                         self.disassembly[idx] = 'STA  {:s}'.format(self.lookup_a16_intel(word, create_label, 'D_'))
-                        self._set_data8(word, address)
+                        self.set_data8(word, address)
                         next_addrs = [address + 3]
                 else:
                     if p <= 1:
@@ -201,14 +190,14 @@ class rom_8085(rom_base.rom_base):
                         self.data_type[idx+1] = rom_base.type_operand
                         self.data_type[idx+2] = rom_base.type_operand
                         self.disassembly[idx] = 'LHLD {:s}'.format(self.lookup_a16_intel(word, create_label, 'D_'))
-                        self._set_data16(word, address)
+                        self.set_data16(word, address)
                         next_addrs = [address + 3]
                     else:
                         word = self.rom[idx+1] | (self.rom[idx+2] << 8)
                         self.data_type[idx+1] = rom_base.type_operand
                         self.data_type[idx+2] = rom_base.type_operand
                         self.disassembly[idx] = 'LDA  {:s}'.format(self.lookup_a16_intel(word, create_label, 'D_'))
-                        self._set_data8(word, address)
+                        self.set_data8(word, address)
                         next_addrs = [address + 3]
 
             elif z == 3:
@@ -404,7 +393,8 @@ class rom_8085(rom_base.rom_base):
 
         # We are just changing the default entries argument value here, to default
         # to the RST intruction destination addresses.
-        return rom_base.rom_base.disassemble(self, entries, create_labels, single_step, valid_range, breakpoints)
+        return rom_base.rom_base.disassemble(self, entries, create_labels,
+                                             single_step, valid_range, breakpoints)
     
 
     def listing(self, source=False):

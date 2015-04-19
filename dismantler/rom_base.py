@@ -70,6 +70,92 @@ class rom_base(object):
         self.label_map     = label_map
         self.port_map        = port_map
 
+    def _set_data8_intel(self, address, access_addr=None):
+        """Classify location as 8-bit data, Intel format.
+
+        Keyword arguments:
+        address     -- Address of location to reclassify.
+        access_addr -- Address of instruction which triggered this
+                       classification. Used for warning comment
+                       if change indicates probable disassembly error.
+        """
+
+        idx = address - self.base_address
+        if (idx >= 0) and (idx < self.rom_len):
+            if (self.data_type[idx] is not type_unknown) \
+              and (self.data_type[idx] is not type_data8):
+                if access_addr is None:
+                    line = 'WARNING: Changed type {:s}->{:s}. '
+                    line = line.format(type_names[self.data_type[idx]],
+                                       type_names[type_data8])
+                else:
+                    line = 'WARNING: Access from {:s} changed type {:s}->{:s}. '
+                    line = line.format(util.hex16_intel(access_addr),
+                                       type_names[self.data_type[idx]],
+                                       type_names[type_data8])
+                self.comments[idx] += line 
+            self.data_type[idx] = type_data8
+            
+
+    def _set_data16_le_intel(self, address, access_addr):
+        """Classify location as 16-bit little-endian data, Intel format.
+
+        Keyword arguments:
+        address     -- Address of LSB location to reclassify.
+        access_addr -- Address of instruction which triggered this
+                       classification. Used for warning comment
+                       if change indicates probable disassembly error.
+        """
+
+        idx = address - self.base_address
+        if (idx >= 0) and (idx < self.rom_len):
+            if (self.data_type[idx] is not type_unknown) \
+              and (self.data_type[idx] is not type_data16L):
+                if access_addr is None:
+                    line = 'WARNING: Changed type {:s}->{:s}. '
+                    line = line.format(type_names[self.data_type[idx]],
+                                       type_names[type_data16L])
+                else:
+                    line = 'WARNING: Access from {:s} changed type {:s}->{:s}. '
+                    line = line.format(util.hex16_intel(access_addr),
+                                       type_names[self.data_type[idx]],
+                                       type_names[type_data16L])
+            self.data_type[idx] = type_data16L
+        idx = idx + 1
+        if (idx >= 0) and (idx < self.rom_len):
+            if (self.data_type[idx] is not type_unknown) \
+              and (self.data_type[idx] is not type_data16H):
+                if access_addr is None:
+                    line = 'WARNING: Changed type {:s}->{:s}. '
+                    line = line.format(type_names[self.data_type[idx]],
+                                       type_names[type_data16H])
+                else:
+                    line = 'WARNING: Access from {:s} changed type {:s}->{:s}. '
+                    line = line.format(util.hex16_intel(access_addr),
+                                       type_names[self.data_type[idx]],
+                                       type_names[type_data16H])
+            self.data_type[idx] = type_data16H
+            
+            
+
+    def set_data8(self, address, access_addr=None):
+        """Classify location as 8-bit data.
+
+        This virtual function must be defined in processor-specific classes,
+        typically by calling the appropriate _set_data* member function.
+        """
+
+        raise exceptions.NotImplementedError, 'Virtual function must be defined by inheritor.'
+
+    def set_data16(self, address, access_addr=None):
+        """Classify location as 8-bit data.
+
+        This virtual function must be defined in processor-specific classes,
+        typically by calling the appropriate _set_data* member function.
+        """
+
+        raise exceptions.NotImplementedError, 'Virtual function must be defined by inheritor.'
+
     def disasm_single(self, address, create_label=True):
         """Disassemble a single instruction.
 
