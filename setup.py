@@ -53,5 +53,5 @@ setup(name          = 'dismantler',
       download_url  = __dl_url__,
       license       = 'GPLv3',
       packages      = ['dismantler'],
-      scripts       = ['dasmantle.py'])
+      scripts       = ['dismantle.py'])
 
