@@ -25,11 +25,11 @@ import util
 import exceptions
 
 # Classifications of contents of a memory location:
-# type_unknown:     (U)   Location has not yet been classified.
-# type_instruction: (I)   Location contains first byte of instruction.
-# type_operand:     (O)   Location contains second or later byte of instruction.
-# type_data*:       (Dnn) Location contains data.
-# type_error:       (E)   Illegal opcode found at address.
+# type_unknown:     Location has not yet been classified.
+# type_instruction: Location contains first byte of instruction.
+# type_operand:     Location contains second or later byte of instruction.
+# type_data*:       Location contains data.
+# type_error:       Illegal opcode found at address.
 type_unknown, type_instruction, type_operand, type_data8, type_data16H, type_data16L, type_error = range(7)
 valid_types = [type_unknown, type_instruction, type_operand, type_data8, type_data16H, type_data16L, type_error]
 data_types  = [type_data8, type_data16H, type_data16L]
@@ -95,8 +95,8 @@ class rom_base(object):
 
         Keyword arguments:
 
-        entries     -- List of entry point addresses at which to begin disassembly.
-                       These shall be memory addresses, not array indices.
+        entries       -- List of entry point addresses at which to begin disassembly.
+                         These shall be memory addresses, not array indices.
 
         create_labels -- Create labels for referenced memory locations
 
@@ -143,29 +143,33 @@ class rom_base(object):
         """
         
         listing_str = ''
-
+        if source:
+            indentation = ''
+        else:
+            indentation = ' '*24
+        
         # Output any labels outside of ROM range
-        listing_str = listing_str + '                        ; External References:\n\n'
+        listing_str = listing_str + '{:s}; External References:\n\n'.format(indentation)
         for address in sorted(self.label_map):
             if (address < self.base_address) or (address > self.max_address):
-                line = '                        {:16s}  EQU  {:s}\n'
-                line = line.format(self.label_map[address], util.hex16_intel(address))
+                line = '{:s}{:16s}  EQU  {:s}\n'
+                line = line.format(indentation, self.label_map[address], util.hex16_intel(address))
                 listing_str = listing_str + line 
 
         # Output the IO port map
-        listing_str = listing_str + '\n                        ; IO Port Map:\n\n'
+        listing_str = listing_str + '\n{:s}; IO Port Map:\n\n'.format(indentation)
         for port in sorted(self.port_map):
-            line = '                        {:16s}  EQU  {:s}\n'
-            line = line.format(self.port_map[port], util.hex8_intel(port))
+            line = '{:s}{:16s}  EQU  {:s}\n'
+            line = line.format(indentation, self.port_map[port], util.hex8_intel(port))
             listing_str = listing_str + line 
             
         # Begin code listing
-        listing_str = listing_str + '\n                        ; ROM Disassembly:\n\n'
+        listing_str = listing_str + '\n{:s}; ROM Disassembly:\n\n'.format(indentation)
         address     = self.base_address
         idx         = 0
 
-        line = '\n                                          ORG  {:s}\n\n'
-        line = line.format(util.hex16_intel(self.base_address))
+        line = '\n{:s}                  ORG  {:s}\n\n'
+        line = line.format(indentation, util.hex16_intel(self.base_address))
         listing_str = listing_str + line
 
         while address <= self.max_address:
@@ -202,8 +206,12 @@ class rom_base(object):
             else:
                 code_str = 'DB   {:s}'.format(util.hex8_intel(self.rom[idx]))
 
-            line = '{addr:04X}  {dstr:16s}  {lbl:17s} {code:24s}; {comm:s}\n'
-            line = line.format(addr=address, dstr=data_str, lbl=label, code=code_str, comm=comment)
+            if source:
+                line = '{lbl:17s} {code:24s}; {comm:s}\n'
+                line = line.format(lbl=label, code=code_str, comm=comment)
+            else:
+                line = '{addr:04X}  {dstr:16s}  {lbl:17s} {code:24s}; {comm:s}\n'
+                line = line.format(addr=address, dstr=data_str, lbl=label, code=code_str, comm=comment)
             listing_str = listing_str + line
 
             address = address + n
