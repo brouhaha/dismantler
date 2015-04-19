@@ -203,18 +203,18 @@ class rom_8080(rom_base.rom_base):
 
             elif z == 4:
                 # 8-bit INC
-                self.disassembly[idx] = 'INR  {:s}'.format(_r[p])
+                self.disassembly[idx] = 'INR  {:s}'.format(_r[y])
                 next_addrs = [address + 1]
 
             elif z == 5:
                 # 8-bit DEC
-                self.disassembly[idx] = 'DCR  {:s}'.format(_r[p])
+                self.disassembly[idx] = 'DCR  {:s}'.format(_r[y])
                 next_addrs = [address + 1]
 
             elif z == 6:
                 # 8-bit load immediate
                 self.data_type[idx+1] = rom_base.type_operand
-                self.disassembly[idx] = 'MVI  {:s}, {:s}'.format(_r[p], util.hex8_intel(self.rom[idx+1]))
+                self.disassembly[idx] = 'MVI  {:s}, {:s}'.format(_r[y], util.hex8_intel(self.rom[idx+1]))
                 next_addrs = [address + 2]
 
             elif z == 7:
