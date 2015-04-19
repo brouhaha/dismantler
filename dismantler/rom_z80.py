@@ -38,11 +38,12 @@ _rp  = ['BC', 'DE', 'HL', 'SP']
 _rp2 = ['BC', 'DE', 'HL', 'AF']
 
 # Default label map
-default_labels = {0x0000:'RST0', 0x0008:'RST1', 0x0010:'RST2', 0x0018:'RST3',
-                  0x0020:'RST4', 0x0028:'RST5', 0x0030:'RST6', 0x0038:'RST7'}
+default_labels = {0x0000:'RST00', 0x0008:'RST08', 0x0010:'RST10', 0x0018:'RST18',
+                  0x0020:'RST20', 0x0028:'RST28', 0x0030:'RST30', 0x0038:'RST38',
+                  0x0066:'NMI'}
 
 # Default entry points
-default_entries = [0x00, 0x08, 0x10, 0x18, 0x20, 0x28, 0x30, 0x38]
+default_entries = [0x00, 0x08, 0x10, 0x18, 0x20, 0x28, 0x30, 0x38, 0x66]
 
 # There are no default port names
 default_ports = {}

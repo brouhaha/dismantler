@@ -49,7 +49,7 @@ SUPPORTED CPUS
 
     8080
     8085
-    z80
+    z80 (INCOMPLETE!)
 
 INSTALLATION
 
@@ -83,10 +83,11 @@ USAGE EXAMPLES
 
 CREDITS
 
-    This page was very helpful:
+    This page was very helpful. It strongly directed the
+    implementations for 8080/8085/z80 disassembly:
     http://z80.info/decoding.htm
 
-    This one was, too:
+    This one was helpful, too:
     http://nemesis.lonestar.org/computers/tandy/software/apps/m4/qd/opcodes.html
 
 AUTHOR
