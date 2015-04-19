@@ -1,5 +1,54 @@
 INTRODUCTION
 
+    Dismantler is an extensible disassembler with semiautomatic code
+    recognition. The dismantler package provides disassembly support
+    to Python programs, while the dismantle.py script allows binary
+    files to be disassembled from the command line.
+
+    Dismantler is primarily intended for disassembly of images of ROM
+    data for the purpose of reverse-engineering. This is normally an
+    iterative process in which the user repeatedly changes disassembly
+    parameters while studying the results of each previous attempt, in
+    order to infer the structure and functionality of the code under
+    examination. Studying the hardware design of the target system may
+    provide clues such as which interrupts are used, possible
+    interrupt vectors, memory mapping, IO port functions, etc.
+    
+    Dismantler attempts to identify code, data, subroutines, etc.
+    using a simple algorithm. Starting at one or more entry addresses
+    (either user-specified or cpu-specific defaults), it disassembles
+    the instruction at the specified location and then recursively
+    continues disassembly at each possible computable next-instruction
+    address. For most instructions, the next-instruction address will
+    simply be the byte following the last operand byte of the current
+    instruction. For a conditional jump, it may be either the
+    following byte or the jump address. Each recursive thread of
+    disassembly ends when the next instruction address cannot be
+    computed without knowing the state of the processor registers,
+    such as at a return or halt instruction.
+
+    Automatic creation of labels for jumps, calls and data accesses
+    provide hints to help the user find interesting locations such as
+    subroutines, variables, etc. Highlighting of addresses which have
+    not been classified points out possible dead code, or (more
+    commonly) code that is reached by calculated addresses which the
+    user will need to figure out by examining the disassembled code.
+    When the disassembler detects that it is trying to treat the
+    operand of an instruction as an opcode in another thread of
+    disassembly, it highlights that situation in a comment to help the
+    user detect probable disassembly errors that suggest incorrect
+    entry addresses, an incorrect CPU selection, etc. The user can
+    also manually specify breakpoints at which disassembly threads
+    will end, specify addresses to be data, etc. in order to guide the
+    disassembly process.
+
+    While the currently-supported lsit of CPUs is small, dismantler is
+    designed to be easily extensible to support new CPUs.
+
+SUPPORTED CPUS
+
+    8080
+    8085
 
 INSTALLATION
 
@@ -18,11 +67,18 @@ INSTALLATION
     Create a source distribution:
         ./setup.py sdist
 
-USAGE EXAMPLE
+USAGE EXAMPLES
 
+    dismantle.py --help
 
-DETAILED DOCUMENTATION
+    dismantle.py --list_cpus
+    
+    dismantle.py -c 8085 -a rom.bin
 
+    dismantle.py -c 8085 -a -e 0x0000 -e 0x0024 \
+                 -l 0x0000 RST0 -l 0x0024 TRAP \
+		 -p 0xF0 UART0 -p 0xF8 UART1 \
+		 rom.bin
 
 AUTHOR
 
