@@ -89,6 +89,26 @@ class rom_8080(rom_base.rom_base):
         self._set_data16_le_intel(address, access_addr)
 
 
+    def set_vector(self, address, access_addr=None):
+        """Classify location as containing a pointer to executable code and return contents.
+
+        Function has same effect as set_data16(), but also returns contents
+        of location so that the vector may be added to the entries list if
+        desired.
+
+        Keyword arguments:
+        address     -- Address of LSB location to reclassify.
+        access_addr -- Address of instruction which triggered this
+                       classification. Used for warning comment
+                       if change indicates probable disassembly error.
+
+        Returns:
+        Address contained at specified location.
+        """
+
+        return self._set_vector16_le_intel(address, access_addr)
+
+
     def disasm_single(self, address, create_label=True):
         """Disassemble a single instruction.
 
@@ -164,14 +184,14 @@ class rom_8080(rom_base.rom_base):
                         word = self.rom[idx+1] | (self.rom[idx+2] << 8)
                         self.data_type[idx+1] = rom_base.type_operand
                         self.data_type[idx+2] = rom_base.type_operand
-                        self.disassembly[idx] = 'SHLD {:s}'.format(self.lookup_a16_intel(word, create_label, 'D_'))
+                        self.disassembly[idx] = 'SHLD {:s}'.format(self._lookup_a16_intel(word, create_label, 'D_'))
                         self.set_data16(word, address)
                         next_addrs = [address + 3]
                     else:
                         word = self.rom[idx+1] | (self.rom[idx+2] << 8)
                         self.data_type[idx+1] = rom_base.type_operand
                         self.data_type[idx+2] = rom_base.type_operand
-                        self.disassembly[idx] = 'STA  {:s}'.format(self.lookup_a16_intel(word, create_label, 'D_'))
+                        self.disassembly[idx] = 'STA  {:s}'.format(self._lookup_a16_intel(word, create_label, 'D_'))
                         self.set_data8(word, address)
                         next_addrs = [address + 3]
                 else:
@@ -182,14 +202,14 @@ class rom_8080(rom_base.rom_base):
                         word = self.rom[idx+1] | (self.rom[idx+2] << 8)
                         self.data_type[idx+1] = rom_base.type_operand
                         self.data_type[idx+2] = rom_base.type_operand
-                        self.disassembly[idx] = 'LHLD {:s}'.format(self.lookup_a16_intel(word, create_label, 'D_'))
+                        self.disassembly[idx] = 'LHLD {:s}'.format(self._lookup_a16_intel(word, create_label, 'D_'))
                         self.set_data16(word, address)
                         next_addrs = [address + 3]
                     else:
                         word = self.rom[idx+1] | (self.rom[idx+2] << 8)
                         self.data_type[idx+1] = rom_base.type_operand
                         self.data_type[idx+2] = rom_base.type_operand
-                        self.disassembly[idx] = 'LDA  {:s}'.format(self.lookup_a16_intel(word, create_label, 'D_'))
+                        self.disassembly[idx] = 'LDA  {:s}'.format(self._lookup_a16_intel(word, create_label, 'D_'))
                         self.set_data8(word, address)
                         next_addrs = [address + 3]
 
@@ -282,7 +302,7 @@ class rom_8080(rom_base.rom_base):
                 word = self.rom[idx+1] | (self.rom[idx+2] << 8)
                 self.data_type[idx+1] = rom_base.type_operand
                 self.data_type[idx+2] = rom_base.type_operand
-                self.disassembly[idx] = 'J{:2s}  {:s}'.format(_cc[y], self.lookup_a16_intel(word, create_label, 'J_'))
+                self.disassembly[idx] = 'J{:2s}  {:s}'.format(_cc[y], self._lookup_a16_intel(word, create_label, 'J_'))
                 next_addrs = [address + 3, word]
 
             elif z == 3:
@@ -291,7 +311,7 @@ class rom_8080(rom_base.rom_base):
                     word = self.rom[idx+1] | (self.rom[idx+2] << 8)
                     self.data_type[idx+1] = rom_base.type_operand
                     self.data_type[idx+2] = rom_base.type_operand
-                    self.disassembly[idx] = 'JMP  {:s}'.format(self.lookup_a16_intel(word, create_label, 'J_'))
+                    self.disassembly[idx] = 'JMP  {:s}'.format(self._lookup_a16_intel(word, create_label, 'J_'))
                     next_addrs = [word]
                 elif y == 1:
                     self.comments[idx] += 'ERROR: invalid opcode {:s} '.format(util.hex8_intel(opcode))
@@ -299,11 +319,11 @@ class rom_8080(rom_base.rom_base):
                     next_addrs = []
                 elif y == 2:
                     self.data_type[idx+1] = rom_base.type_operand
-                    self.disassembly[idx] = 'OUT  {:s}'.format(self.lookup_port8_intel(self.rom[idx+1], create_label))
+                    self.disassembly[idx] = 'OUT  {:s}'.format(self._lookup_port8_intel(self.rom[idx+1], create_label))
                     next_addrs = [address+2]
                 elif y == 3:
                     self.data_type[idx+1] = rom_base.type_operand
-                    self.disassembly[idx] = 'IN   {:s}'.format(self.lookup_port8_intel(self.rom[idx+1], create_label))
+                    self.disassembly[idx] = 'IN   {:s}'.format(self._lookup_port8_intel(self.rom[idx+1], create_label))
                     next_addrs = [address+2]
                 elif y == 4:
                     self.disassembly[idx] = 'XTHL'
@@ -324,7 +344,7 @@ class rom_8080(rom_base.rom_base):
                 word = self.rom[idx+1] | (self.rom[idx+2] << 8)
                 self.data_type[idx+1] = rom_base.type_operand
                 self.data_type[idx+2] = rom_base.type_operand
-                self.disassembly[idx] = 'C{:2s}  {:s}'.format(_cc[y], self.lookup_a16_intel(word, create_label, 'C_'))
+                self.disassembly[idx] = 'C{:2s}  {:s}'.format(_cc[y], self._lookup_a16_intel(word, create_label, 'C_'))
                 next_addrs = [address + 3, word]
 
             elif z == 5:
@@ -337,7 +357,7 @@ class rom_8080(rom_base.rom_base):
                         word = self.rom[idx+1] | (self.rom[idx+2] << 8)
                         self.data_type[idx+1] = rom_base.type_operand
                         self.data_type[idx+2] = rom_base.type_operand
-                        self.disassembly[idx] = 'CALL {:s}'.format(self.lookup_a16_intel(word, create_label, 'C_'))
+                        self.disassembly[idx] = 'CALL {:s}'.format(self._lookup_a16_intel(word, create_label, 'C_'))
                         next_addrs = [address + 3, word]
                     else:
                         self.comments[idx] += 'ERROR: invalid opcode {:s} '.format(util.hex8_intel(opcode))
@@ -359,7 +379,8 @@ class rom_8080(rom_base.rom_base):
 
 
     def disassemble(self, entries=default_entries,
-                    create_labels = True, single_step=False, valid_range=None, breakpoints=[]):
+                    create_labels = True, single_step=False, valid_range=None,
+                    breakpoints=[], vectors=[]):
         """Disassemble code, starting at specified entry point address(es).
 
         Keyword arguments:
@@ -382,12 +403,16 @@ class rom_8080(rom_base.rom_base):
                          be stopped. Intended to be used to guide the disassembler in
                          cases where it gets confused about the program structure, in
                          conjunction with the entries argument.
+
+        vectors       -- If specified, a list of addresses which are assumed to contain
+                         pointers to executable code. Pointers are subject to label creation
+                         and substitution, and will be added to entries list for disassembly.
         """
 
         # We are just changing the default entries argument value here, to default
         # to the RST intruction destination addresses.
         return rom_base.rom_base.disassemble(self, entries, create_labels,
-                                             single_step, valid_range, breakpoints)
+                                             single_step, valid_range, breakpoints, vectors)
     
 
     def listing(self, source=False):
@@ -400,3 +425,34 @@ class rom_8080(rom_base.rom_base):
         """
 
         return rom_base.rom_base._listing_a16_d8_intel(self, source)
+
+
+    def lookup_address(self, address, create_label=True, prefix='L_'):
+        """Look up address in label map, returning symbol name or hex string.
+
+        Keyword arguments:
+        address      -- 16-bit address to look up.
+        create_label -- If True, create label if not already defined.
+        prefix       -- Prefix for automatically-created labels
+
+        Returns:
+        String containing either label name, or hexadecimal address in Intel
+        assembler format."""
+
+        return self._lookup_a16_intel(address, create_label, prefix)
+    
+
+    def lookup_port(self, port, create_label=True, prefix='P_'):
+        """Look up port in IO port map, returning symbol name or hex string.
+
+        Keyword arguments:
+        port         -- 8-bit IO port number to look up
+        create_label -- If True, create label if not already defined.
+        prefix       -- Prefix for automatically-created labels
+
+        Returns:
+        String containing either port name, or hexadecimal address in Intel
+        assembler format."""
+
+        return self._lookup_port8(port, create_label, prefix)
+

@@ -116,6 +116,12 @@ if __name__ == '__main__':
                         metavar='ADDRESS',
                         help='Classify location as 16-bit data prior to disassembly.')
 
+    parser.add_argument('-v', '--vector', action='append', type=parse_int,
+                        metavar='ADDRESS', dest='vectors',
+                        help="""Classify location as a vector pointing to executable code.
+                                Contents of location are added to entry list, and are subject
+                                to label substitution and creation.""")
+
     parser.add_argument('-s', '--source', action='store_true',
                         help='Output assembler source format instead of listing format.')
 
@@ -132,9 +138,9 @@ if __name__ == '__main__':
             print '  ' + cpu
         exit(0)
 
-    # Use default label map if auto label mode is requested, but let
-    # user-provided labels override its entries.
-    if args.auto_label:
+    # Use default label map if auto label mode is requested
+    # and there are no user-provided labels.
+    if args.auto_label and (args.labels is None):
         labels = dismantler.default_labels[args.cpu]
     else:
         labels = {}
@@ -142,9 +148,9 @@ if __name__ == '__main__':
         for address in args.labels:
             labels[address] = args.labels[address]
 
-    # Use default port map if auto label mode is requested, but let
-    # user-provided ports override its entries.
-    if args.auto_label:
+    # Use default port map if auto label mode is requested
+    # and there are no user-provided ports.
+    if args.auto_label and (args.ports is None):
         ports = dismantler.default_ports[args.cpu]
     else:
         ports = {}
@@ -162,6 +168,11 @@ if __name__ == '__main__':
         breakpoints = args.breakpoints
     else:
         breakpoints = []
+
+    if args.vectors is not None:
+        vectors = args.vectors
+    else:
+        vectors = []
 
     # Read the binary ROM image
     rom_data = bytearray(args.bin_file.read())
@@ -185,8 +196,10 @@ if __name__ == '__main__':
             rom.set_data16(address)
 
     # Disassemble the ROM image
-    rom.disassemble(entries=entries, breakpoints=breakpoints,
-                    create_labels=args.auto_label)
+    rom.disassemble(entries=entries,
+                    create_labels=args.auto_label,
+                    breakpoints=breakpoints,
+                    vectors=vectors)
 
     # Generate and output the listing
     sys.stdout.write(rom.listing(source=args.source))

@@ -22,7 +22,7 @@
 """Python binding for the hidapi library."""
 
 __all__       = ['rom_base', 'util', 'rom_8080', 'rom_8085', 'rom_z80']
-__version__   = '0.1.0'
+__version__   = '0.2.0'
 __copyright__ = 'Copyright (C) 2015 Mark J. Blair, released under GPLv3'
 __pkg_url__   = 'http://www.nf6x.net/tags/dismantler/'
 __dl_url__    = 'https://github.com/NF6X/dismantler'

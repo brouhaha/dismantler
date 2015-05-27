@@ -29,11 +29,22 @@ import exceptions
 # type_instruction: Location contains first byte of instruction.
 # type_operand:     Location contains second or later byte of instruction.
 # type_data*:       Location contains data.
+# type_vector*:     Location contains pointer to executable code.
 # type_error:       Illegal opcode found at address.
-type_unknown, type_instruction, type_operand, type_data8, type_data16H, type_data16L, type_error = range(7)
-valid_types = [type_unknown, type_instruction, type_operand, type_data8, type_data16H, type_data16L, type_error]
+
+type_unknown, type_instruction, type_operand, type_data8, \
+  type_data16H, type_data16L, type_vector16H, type_vector16L, \
+  type_error = range(9)
+
+valid_types = [type_unknown, type_instruction, type_operand, type_data8,
+               type_data16H, type_data16L, type_vector16H, type_vector16L,
+               type_error]
+
 data_types  = [type_data8, type_data16H, type_data16L]
-type_names  = ['UNKNOWN', 'INSTRUCTION', 'OPERAND', 'DATA8', 'DATA16H', 'DATA16L', 'ERROR']
+
+type_names  = ['UNKNOWN', 'INSTRUCTION', 'OPERAND', 'DATA8',
+               'DATA16H', 'DATA16L', 'VECTOR16H', 'VECTOR16L',
+               'ERROR']
 
 class rom_base(object):
     """Abstract base class for ROM image to be disassembled."""
@@ -50,7 +61,7 @@ class rom_base(object):
     special_labels  = {}  # Auto-generated label names for special addresses
     special_ports   = {}  # Auto-generated label names for special IO ports
 
-    def __init__(self, rom, base_address=0, label_map={}, port_map={}):
+    def __init__(self, rom, base_address=0, label_map={}, port_map={}, vector_map={}):
         """Object code item constructor.
 
         Keyword arguments:
@@ -66,9 +77,9 @@ class rom_base(object):
         self.max_address   = self.base_address + self.rom_len - 1
         self.data_type     = [type_unknown]*self.rom_len
         self.disassembly   = ['']*self.rom_len
-        self.comments        = ['']*self.rom_len
+        self.comments      = ['']*self.rom_len
         self.label_map     = label_map
-        self.port_map        = port_map
+        self.port_map      = port_map
 
     def _set_data8_intel(self, address, access_addr=None):
         """Classify location as 8-bit data, Intel format.
@@ -138,6 +149,55 @@ class rom_base(object):
             
             
 
+    def _set_vector16_le_intel(self, address, access_addr):
+        """Classify location as 16-bit little-endian vector, Intel format.
+
+        Keyword arguments:
+        address     -- Address of LSB location to reclassify.
+        access_addr -- Address of instruction which triggered this
+                       classification. Used for warning comment
+                       if change indicates probable disassembly error.
+        Returns:
+        Address contained at specified location.
+        """
+
+        idx = address - self.base_address
+        vector = None
+        if (idx >= 0) and (idx < self.rom_len):
+            if (self.data_type[idx] is not type_unknown) \
+              and (self.data_type[idx] is not type_vector16L):
+                if access_addr is None:
+                    line = 'WARNING: Changed type {:s}->{:s}. '
+                    line = line.format(type_names[self.data_type[idx]],
+                                       type_names[type_vector16L])
+                else:
+                    line = 'WARNING: Access from {:s} changed type {:s}->{:s}. '
+                    line = line.format(util.hex16_intel(access_addr),
+                                       type_names[self.data_type[idx]],
+                                       type_names[type_vector16L])
+            self.data_type[idx] = type_vector16L
+            vector = self.rom[idx]
+        idx = idx + 1
+        if (idx >= 0) and (idx < self.rom_len):
+            if (self.data_type[idx] is not type_unknown) \
+              and (self.data_type[idx] is not type_vector16H):
+                if access_addr is None:
+                    line = 'WARNING: Changed type {:s}->{:s}. '
+                    line = line.format(type_names[self.data_type[idx]],
+                                       type_names[type_vector16H])
+                else:
+                    line = 'WARNING: Access from {:s} changed type {:s}->{:s}. '
+                    line = line.format(util.hex16_intel(access_addr),
+                                       type_names[self.data_type[idx]],
+                                       type_names[type_vector16H])
+            self.data_type[idx] = type_vector16H
+            if vector is not None:
+                vector = vector | (self.rom[idx] << 8)
+        return vector
+
+            
+            
+
     def set_data8(self, address, access_addr=None):
         """Classify location as 8-bit data.
 
@@ -148,7 +208,16 @@ class rom_base(object):
         raise exceptions.NotImplementedError, 'Virtual function must be defined by inheritor.'
 
     def set_data16(self, address, access_addr=None):
-        """Classify location as 8-bit data.
+        """Classify location as 16-bit data.
+
+        This virtual function must be defined in processor-specific classes,
+        typically by calling the appropriate _set_data* member function.
+        """
+
+        raise exceptions.NotImplementedError, 'Virtual function must be defined by inheritor.'
+
+    def set_vector(self, address, access_addr=None):
+        """Classify location as containing a pointer to executable code and return contents.
 
         This virtual function must be defined in processor-specific classes,
         typically by calling the appropriate _set_data* member function.
@@ -176,7 +245,7 @@ class rom_base(object):
     
         
 
-    def disassemble(self, entries=[0], create_labels = True, single_step=False, valid_range=None, breakpoints=[]):
+    def disassemble(self, entries=[0], create_labels = True, single_step=False, valid_range=None, breakpoints=[], vectors=[]):
         """Disassemble code, starting at specified entry point address(es).
 
         Keyword arguments:
@@ -199,6 +268,10 @@ class rom_base(object):
                          be stopped. Intended to be used to guide the disassembler in
                          cases where it gets confused about the program structure, in
                          conjunction with the entries argument.
+
+        vectors       -- If specified, a list of addresses which are assumed to contain
+                         pointers to executable code. Pointers are subject to label creation
+                         and substitution, and will be added to entries list for disassembly.
         """
 
         if valid_range is not None:
@@ -207,7 +280,14 @@ class rom_base(object):
             valid_min = self.base_address
             valid_max = self.max_address
             
-        for entry in entries:
+        vecptrs = []
+        for vector in vectors:
+            ptr = self.set_vector(vector)
+            vecptrs.append(ptr)
+            if create_labels:
+                self.lookup_address(ptr, True, 'V_')
+
+        for entry in (entries + vecptrs):
             if (entry>=valid_min) and (entry<=valid_max) and (entry not in breakpoints):
 
                 if (entry < self.base_address) or (entry > self.max_address):
@@ -270,7 +350,8 @@ class rom_base(object):
             
             if self.data_type[idx] is type_instruction:
                 code_str = self.disassembly[idx]
-                while self.data_type[idx + n] is type_operand:
+                # Wrap this in try/except in case we run off end of rom
+                while ((idx + n) < len(self.data_type)) and self.data_type[idx + n] is type_operand:
                     data_str = data_str + ' {:02X}'.format(self.rom[idx + n])
                     if len(self.comments[idx + n]) > 0:
                         comment = comment + ' ' + self.comments[idx + n]
@@ -285,8 +366,14 @@ class rom_base(object):
                 comment = comment + ' ' + self.comments[idx + 1]
                 n = n + 1
 
+            elif (self.data_type[idx] is type_vector16L) and (self.data_type[idx+1] is type_vector16H):
+                word = self.rom[idx] | (self.rom[idx+1] << 8)
+                code_str = 'DW   {:s}'.format(self.lookup_address(word, False))
+                comment = comment + ' ' + self.comments[idx + 1]
+                n = n + 1
+
             elif (self.data_type[idx] is type_unknown):
-                comment = '(LOCATION NOT CLASSIFIED) ' + comment
+                comment = '(UNREACHABLE) ' + comment
                 code_str = 'DB   {:s}'.format(util.hex8_intel(self.rom[idx]))
 
             else:
@@ -315,7 +402,7 @@ class rom_base(object):
 
         raise exceptions.NotImplementedError, 'Virtual function must be defined by inheritor.'
     
-    def lookup_a16_intel(self, address, create_label=True, prefix='L_'):
+    def _lookup_a16_intel(self, address, create_label=True, prefix='L_'):
         """Look up address in label map, returning symbol name or hex string.
 
         Keyword arguments:
@@ -339,7 +426,7 @@ class rom_base(object):
         else:
             return util.hex16_intel(address)
         
-    def lookup_port8_intel(self, port, create_label=True, prefix='P_'):
+    def _lookup_port8_intel(self, port, create_label=True, prefix='P_'):
         """Look up port in IO port map, returning symbol name or hex string.
 
         Keyword arguments:
@@ -363,4 +450,23 @@ class rom_base(object):
         else:
             return util.hex8_intel(port)
         
+
+    def lookup_address(self, address, create_label=True, prefix='L_'):
+        """Look up address in label map, returning symbol name or hex string.
+
+        This virtual function must be defined in processor-specific classes,
+        typically by calling the appropriate _lookup_a* member function.
+        """
+
+        raise exceptions.NotImplementedError, 'Virtual function must be defined by inheritor.'
+
+
+    def lookup_port(self, address, create_label=True, prefix='L_'):
+        """Look up port in IO port map, returning symbol name or hex string.
+
+        This virtual function must be defined in processor-specific classes,
+        typically by calling the appropriate _lookup_port* member function.
+        """
+
+        raise exceptions.NotImplementedError, 'Virtual function must be defined by inheritor.'
 
