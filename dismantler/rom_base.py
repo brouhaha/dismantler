@@ -60,6 +60,7 @@ class rom_base(object):
     port_map        = {}  # IO port label map
     special_labels  = {}  # Auto-generated label names for special addresses
     special_ports   = {}  # Auto-generated label names for special IO ports
+    xref            = {}  # Call/branch/jump cross-reference
 
     def __init__(self, rom, base_address=0, label_map={}, port_map={}, vector_map={}):
         """Object code item constructor.
@@ -245,7 +246,8 @@ class rom_base(object):
     
         
 
-    def disassemble(self, entries=[0], create_labels = True, single_step=False, valid_range=None, breakpoints=[], vectors=[]):
+    def disassemble(self, entries=[0], create_labels = True, single_step=False,
+                    valid_range=None, breakpoints=[], vectors=[]):
         """Disassemble code, starting at specified entry point address(es).
 
         Keyword arguments:
@@ -350,7 +352,6 @@ class rom_base(object):
             
             if self.data_type[idx] is type_instruction:
                 code_str = self.disassembly[idx]
-                # Wrap this in try/except in case we run off end of rom
                 while ((idx + n) < len(self.data_type)) and self.data_type[idx + n] is type_operand:
                     data_str = data_str + ' {:02X}'.format(self.rom[idx + n])
                     if len(self.comments[idx + n]) > 0:
@@ -389,6 +390,29 @@ class rom_base(object):
 
             address = address + n
             idx     = idx + n
+
+        # Output cross-reference
+        listing_str = listing_str + '\n{:s}; Cross-Reference List:\n'.format(indentation)
+        listing_str = listing_str + '{:s}; (Does not include calls via computed addresses or vectors)\n\n'.format(indentation)
+
+        # Perform label substitution on destination addresses
+        dest_list = {}
+        for dest in self.xref.keys():
+            dest_list[self.lookup_address(dest, False)] = dest
+
+        # Now sort by destination label/address strings
+        for dest_str in sorted(dest_list.keys()):
+            dest = dest_list[dest_str]
+            # Perform label substitution on source addresses
+            source_list = []
+            for source in self.xref[dest]:
+                source_list.append(self.lookup_address(source, False))
+            # Print the cross-reference for this destination
+            listing_str = listing_str + '{:s}; {:17s}'.format(indentation, dest_str+':')
+            for source_str in sorted(source_list):
+                listing_str = listing_str + ' {:s}'.format(source_str)
+            listing_str = listing_str + '\n'
+            
 
         return listing_str
 
@@ -469,4 +493,19 @@ class rom_base(object):
         """
 
         raise exceptions.NotImplementedError, 'Virtual function must be defined by inheritor.'
+
+
+    def add_xref(self, source, dest):
+        """Add call/jump/branch to cross-reference dictionary.
+
+        Keyword arguments:
+        source -- Address of calling instruction.
+        dest   -- Address of called function."""
+
+        if dest in self.xref:
+            if dest not in self.xref[dest]:
+                self.xref[dest].append(source)
+        else:
+            self.xref[dest] = [source]
+    
 

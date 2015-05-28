@@ -173,16 +173,19 @@ class rom_z80(rom_base.rom_base):
                     self.data_type[idx+1] = rom_base.type_operand
                     self.disassembly[idx] = 'DJNZ {:s}'.format(self._lookup_a16_intel(dest, create_label, 'J_'))
                     next_addrs = [address + 2, dest]
+                    self.add_xref(address, dest)
                 elif y == 3:
                     dest = address + util.signed_byte(self.rom[idx+1])
                     self.data_type[idx+1] = rom_base.type_operand
                     self.disassembly[idx] = 'JR   {:s}'.format(self._lookup_a16_intel(dest, create_label, 'J_'))
                     next_addrs = [dest]
+                    self.add_xref(address, dest)
                 else:
                     dest = address + util.signed_byte(self.rom[idx+1])
                     self.data_type[idx+1] = rom_base.type_operand
                     self.disassembly[idx] = 'JR   {:s}, {:s}'.format(_cc[y-4], self._lookup_a16_intel(dest, create_label, 'J_'))
                     next_addrs = [address + 2, dest]
+                    self.add_xref(address, dest)
                     
             elif z == 1:
                 # 16-bit load immediate/add
@@ -324,6 +327,7 @@ class rom_z80(rom_base.rom_base):
                 self.data_type[idx+2] = rom_base.type_operand
                 self.disassembly[idx] = 'JP   {:s}, {:s}'.format(_cc[y], self._lookup_a16_intel(word, create_label, 'J_'))
                 next_addrs = [address + 3, word]
+                self.add_xref(address, word)
 
             elif z == 3:
                 # Assorted operations
@@ -333,6 +337,7 @@ class rom_z80(rom_base.rom_base):
                     self.data_type[idx+2] = rom_base.type_operand
                     self.disassembly[idx] = 'JP   {:s}'.format(self._lookup_a16_intel(word, create_label, 'J_'))
                     next_addrs = [word]
+                    self.add_xref(address, word)
                 elif y == 1:
                     # CB prefix
                     opcode2 = self.rom[idx+1]
@@ -383,6 +388,7 @@ class rom_z80(rom_base.rom_base):
                 self.data_type[idx+2] = rom_base.type_operand
                 self.disassembly[idx] = 'CALL {:s}, {:s}'.format(_cc[y], self._lookup_a16_intel(word, create_label, 'C_'))
                 next_addrs = [address + 3, word]
+                self.add_xref(address, word)
 
             elif z == 5:
                 # PUSH and various ops
@@ -396,6 +402,7 @@ class rom_z80(rom_base.rom_base):
                         self.data_type[idx+2] = rom_base.type_operand
                         self.disassembly[idx] = 'CALL {:s}'.format(self._lookup_a16_intel(word, create_label, 'C_'))
                         next_addrs = [address + 3, word]
+                        self.add_xref(address, word)
                     elif p == 1:
                     # DD prefix
                         raise exceptions.NotImplementedError, 'DD prefixed instructions not implemented yet.'
@@ -510,6 +517,7 @@ class rom_z80(rom_base.rom_base):
                 # Restart
                 self.disassembly[idx] = 'RST  {:d}'.format(y*8)
                 next_addrs = [y*8]
+                self.add_xref(address, y*8)
 
         return next_addrs
 

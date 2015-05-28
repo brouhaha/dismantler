@@ -311,6 +311,7 @@ class rom_8085(rom_base.rom_base):
                 self.data_type[idx+2] = rom_base.type_operand
                 self.disassembly[idx] = 'J{:2s}  {:s}'.format(_cc[y], self._lookup_a16_intel(word, create_label, 'J_'))
                 next_addrs = [address + 3, word]
+                self.add_xref(address, word)
 
             elif z == 3:
                 # Assorted operations
@@ -320,6 +321,7 @@ class rom_8085(rom_base.rom_base):
                     self.data_type[idx+2] = rom_base.type_operand
                     self.disassembly[idx] = 'JMP  {:s}'.format(self._lookup_a16_intel(word, create_label, 'J_'))
                     next_addrs = [word]
+                    self.add_xref(address, word)
                 elif y == 1:
                     self.comments[idx] += 'ERROR: invalid opcode {:s} '.format(util.hex8_intel(opcode))
                     self.data_type[idx] = rom_base.type_error
@@ -353,6 +355,7 @@ class rom_8085(rom_base.rom_base):
                 self.data_type[idx+2] = rom_base.type_operand
                 self.disassembly[idx] = 'C{:2s}  {:s}'.format(_cc[y], self._lookup_a16_intel(word, create_label, 'C_'))
                 next_addrs = [address + 3, word]
+                self.add_xref(address, word)
 
             elif z == 5:
                 # PUSH and various ops
@@ -366,6 +369,7 @@ class rom_8085(rom_base.rom_base):
                         self.data_type[idx+2] = rom_base.type_operand
                         self.disassembly[idx] = 'CALL {:s}'.format(self._lookup_a16_intel(word, create_label, 'C_'))
                         next_addrs = [address + 3, word]
+                        self.add_xref(address, word)
                     else:
                         self.comments[idx] += 'ERROR: invalid opcode {:s} '.format(util.hex8_intel(opcode))
                         self.data_type[idx] = rom_base.type_error
@@ -381,6 +385,7 @@ class rom_8085(rom_base.rom_base):
                 # Restart
                 self.disassembly[idx] = 'RST  {:d}'.format(y)
                 next_addrs = [y*8]
+                self.add_xref(address, y*8)
 
         return next_addrs
 
