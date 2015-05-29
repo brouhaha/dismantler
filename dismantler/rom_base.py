@@ -40,7 +40,7 @@ valid_types = [type_unknown, type_instruction, type_operand, type_data8,
                type_data16H, type_data16L, type_vector16H, type_vector16L,
                type_error]
 
-data_types  = [type_data8, type_data16H, type_data16L]
+data_types  = [type_data8, type_data16H, type_data16L, type_vector16H, type_vector16L]
 
 type_names  = ['UNKNOWN', 'INSTRUCTION', 'OPERAND', 'DATA8',
                'DATA16H', 'DATA16L', 'VECTOR16H', 'VECTOR16L',
@@ -61,8 +61,10 @@ class rom_base(object):
     special_labels  = {}  # Auto-generated label names for special addresses
     special_ports   = {}  # Auto-generated label names for special IO ports
     xref            = {}  # Call/branch/jump cross-reference
+    vector_addrs    = []  # Addresses of all vectors
+    vector_dests    = []  # Addresses of all vector destinations
 
-    def __init__(self, rom, base_address=0, label_map={}, port_map={}, vector_map={}):
+    def __init__(self, rom, base_address=0, label_map={}, port_map={}):
         """Object code item constructor.
 
         Keyword arguments:
@@ -164,6 +166,9 @@ class rom_base(object):
 
         idx = address - self.base_address
         vector = None
+        if address not in self.vector_addrs:
+            self.vector_addrs.append(address)
+            
         if (idx >= 0) and (idx < self.rom_len):
             if (self.data_type[idx] is not type_unknown) \
               and (self.data_type[idx] is not type_vector16L):
@@ -194,6 +199,11 @@ class rom_base(object):
             self.data_type[idx] = type_vector16H
             if vector is not None:
                 vector = vector | (self.rom[idx] << 8)
+
+        if vector is not None:
+            if vector not in self.vector_dests:
+                self.vector_dests.append(vector)
+                
         return vector
 
             
@@ -335,6 +345,7 @@ class rom_base(object):
         listing_str = listing_str + '\n{:s}; ROM Disassembly:\n\n'.format(indentation)
         address     = self.base_address
         idx         = 0
+        previdx     = 0
 
         line = '\n{:s}                  ORG  {:s}\n\n'
         line = line.format(indentation, util.hex16_intel(self.base_address))
@@ -386,9 +397,35 @@ class rom_base(object):
             else:
                 line = '{addr:04X}  {dstr:16s}  {lbl:17s} {code:24s}; {comm:s}\n'
                 line = line.format(addr=address, dstr=data_str, lbl=label, code=code_str, comm=comment)
+
+            # Insert extra line breaks to improve readability
+            if address in self.xref:
+                # Line break before call/jump destinations
+                line = '\n' + line
+            elif address in self.vector_dests:
+                # Line break before vector destinations
+                line = '\n' + line
+            elif (self.data_type[idx] is type_unknown) \
+                and (self.data_type[previdx] is not type_unknown):
+                # Line break before block of unreachable code
+                line = '\n' + line
+            elif (self.data_type[idx] is not type_unknown) \
+                and (self.data_type[previdx] is type_unknown):
+                # Line break after block of unreachable code
+                line = '\n' + line
+            elif (self.data_type[idx] in data_types) \
+                and (self.data_type[previdx] not in data_types):
+                # Line break before block of data
+                line = '\n' + line
+            elif (self.data_type[idx] not in data_types) \
+                and (self.data_type[previdx] in data_types):
+                # Line break after block of data
+                line = '\n' + line
+
             listing_str = listing_str + line
 
             address = address + n
+            previdx = idx
             idx     = idx + n
 
         # Output cross-reference
