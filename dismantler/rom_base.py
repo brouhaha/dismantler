@@ -428,28 +428,30 @@ class rom_base(object):
             previdx = idx
             idx     = idx + n
 
+        listing_str = listing_str + '\n{:s}                  END\n\n'.format(indentation)
+
         # Output cross-reference
-        listing_str = listing_str + '\n{:s}; Cross-Reference List:\n'.format(indentation)
-        listing_str = listing_str + '{:s}; (Does not include calls via computed addresses or vectors)\n\n'.format(indentation)
+        if not source:
+            listing_str = listing_str + '{:s}; Cross-Reference List:\n'.format(indentation)
+            listing_str = listing_str + '{:s}; (Does not include calls via computed addresses or vectors)\n\n'.format(indentation)
 
-        # Perform label substitution on destination addresses
-        dest_list = {}
-        for dest in self.xref.keys():
-            dest_list[self.lookup_address(dest, False)] = dest
+            # Perform label substitution on destination addresses
+            dest_list = {}
+            for dest in self.xref.keys():
+                dest_list[self.lookup_address(dest, False)] = dest
 
-        # Now sort by destination label/address strings
-        for dest_str in sorted(dest_list.keys()):
-            dest = dest_list[dest_str]
-            # Perform label substitution on source addresses
-            source_list = []
-            for source in self.xref[dest]:
-                source_list.append(self.lookup_address(source, False))
-            # Print the cross-reference for this destination
-            listing_str = listing_str + '{:s}; {:17s}'.format(indentation, dest_str+':')
-            for source_str in sorted(source_list):
-                listing_str = listing_str + ' {:s}'.format(source_str)
-            listing_str = listing_str + '\n'
-            
+            # Now sort by destination label/address strings
+            for dest_str in sorted(dest_list.keys()):
+                dest = dest_list[dest_str]
+                # Perform label substitution on source addresses
+                source_list = []
+                for source in self.xref[dest]:
+                    source_list.append(self.lookup_address(source, False))
+                # Print the cross-reference for this destination
+                listing_str = listing_str + '{:s}; {:17s}'.format(indentation, dest_str+':')
+                for source_str in sorted(source_list):
+                    listing_str = listing_str + ' {:s}'.format(source_str)
+                listing_str = listing_str + '\n'
 
         return listing_str
 

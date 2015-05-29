@@ -25,11 +25,12 @@ import rom_base
 import util
 import exceptions
 
-_alu = ['ADD', 'ADC', 'SUB ', 'SBC', 'ANA', 'XRA', 'ORA', 'CMP']
-_cc  = ['NZ', 'Z', 'NC', 'C', 'PO', 'PE', 'P', 'M']
-_r   = ['B', 'C', 'D', 'E', 'H', 'L', 'M', 'A']
-_rp  = ['B', 'D', 'H', 'SP']
-_rp2 = ['B', 'D', 'H', 'PSW']
+_alu  = ['ADD', 'ADC', 'SUB ', 'SBC', 'ANA', 'XRA', 'ORA', 'CMP']
+_alui = ['ADI', 'ACI', 'SUI ', 'SBI', 'ANI', 'XRI', 'ORI', 'CPI']
+_cc   = ['NZ', 'Z', 'NC', 'C', 'PO', 'PE', 'P', 'M']
+_r    = ['B', 'C', 'D', 'E', 'H', 'L', 'M', 'A']
+_rp   = ['B', 'D', 'H', 'SP']
+_rp2  = ['B', 'D', 'H', 'PSW']
 
 # Default label map
 default_labels = {0x0000:'RST0', 0x0008:'RST1', 0x0010:'RST2', 0x0018:'RST3',
@@ -260,7 +261,7 @@ class rom_8080(rom_base.rom_base):
         elif x == 1:
             if (z == 6) and (y == 6):
                 # Exception
-                self.disassembly[idx] = 'HALT'
+                self.disassembly[idx] = 'HLT'
             else:
                 self.disassembly[idx] = 'MOV  {:s}, {:s}'.format(_r[y],_r[z])
             next_addrs = [address + 1]
@@ -370,9 +371,10 @@ class rom_8080(rom_base.rom_base):
             elif z == 6:
                 # Operate on accumulator and immediate operand
                 self.data_type[idx+1] = rom_base.type_operand
-                self.disassembly[idx] = '{:4s} {:s}'.format(_alu[y],util.hex8_intel(self.rom[idx+1]))
+                self.disassembly[idx] = '{:4s} {:s}'.format(_alui[y],util.hex8_intel(self.rom[idx+1]))
                 next_addrs = [address + 2]
                 pass
+
             elif z == 7:
                 # Restart
                 self.disassembly[idx] = 'RST  {:d}'.format(y)
