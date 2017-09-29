@@ -46,6 +46,8 @@ class rom_8085(rom_base.rom_base):
     """ROM image containing Intel 8085 code to be disassembled."""
 
 
+    description = 'Intel 8085'
+
     # Pre-defined names for special auto-created labels
     special_labels = default_labels
 

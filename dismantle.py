@@ -47,12 +47,11 @@ class parse_port_def(argparse.Action):
         if args.ports is None:
             args.ports = {}
         args.ports[port] = label
-        
 
 # Main entry point when called as an executable script.
 if __name__ == '__main__':
 
-    # Create command line argument parser
+    # Create command line argument parser.
     parser = argparse.ArgumentParser(
         prog='dismantle.py',
         description=textwrap.dedent("""\
@@ -129,21 +128,27 @@ if __name__ == '__main__':
                         nargs='?', default=None,
                         help='Binary file containing image of ROM to be disassembled.')
 
+    def arg_error(msg):
+        """Print error message, print usage summary, and exit with error code."""
+        print('ERROR: {:s}\n'.format(msg))
+        parser.print_usage()
+        exit(1)
+
     # Parse command line arguments
     args = parser.parse_args()
 
     # List CPUs and exit if --list_cpus is specified
     if (args.list_cpus == 1):
         print('Supported CPUs:')
-        for cpu in dismantler.cpus:
-            print('  ' + cpu)
+        for cpu in sorted(list(dismantler.cpus.keys())):
+            print('  {:8} {:}'.format(cpu, dismantler.cpus[cpu].description))
         exit(0)
 
     # Make sure necessary arguments are present
     if args.bin_file is None:
-        raise ValueError('Error: You need to specify a binnary file to be disassembled.')
+        arg_error('You need to specify a binary file to be disassembled.')
     if args.cpu is None:
-        raise ValueError('Error: You need to specify the CPU type with the -c/--cpu flag.')
+        arg_error('You need to specify the CPU type with the -c/--cpu flag.')
 
     # Use default label map if auto label mode is requested
     # and there are no user-provided labels.

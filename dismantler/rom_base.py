@@ -63,6 +63,10 @@ class rom_base(object):
     vector_addrs    = []  # Addresses of all vectors
     vector_dests    = []  # Addresses of all vector destinations
 
+    # Description of this processor:
+    # Child classes must set this to a short string describing the processor.
+    description = None
+
     def __init__(self, rom, base_address=0, label_map={}, port_map={}):
         """Object code item constructor.
 

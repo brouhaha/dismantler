@@ -21,9 +21,9 @@
 
 """Python binding for the hidapi library."""
 
-__all__       = ['rom_base', 'util', 'rom_8080', 'rom_8085', 'rom_z80']
-__version__   = '0.2.0'
-__copyright__ = 'Copyright (C) 2015 Mark J. Blair, released under GPLv3'
+__all__       = ['rom_base', 'util', 'rom_1802', 'rom_8080', 'rom_8085', 'rom_z80']
+__version__   = '0.3.0'
+__copyright__ = 'Copyright (C) 2015, 2017 Mark J. Blair, released under GPLv3'
 __pkg_url__   = 'http://www.nf6x.net/tags/dismantler/'
 __dl_url__    = 'https://github.com/NF6X/dismantler'
 
@@ -47,21 +47,25 @@ if sys.getrecursionlimit() < _recursionlimit:
 #   rom = dismantler.cpus['8085'](rom=mybuffer, base_address=0x0000,
 #                                 label_map={0x0000:'RESET'},
 #                                 port_map={0xF0:'UART0', 0xF8:'UART1'})
-cpus = {'8080': rom_8080.rom_8080,
+cpus = {'1802': rom_1802.rom_1802,
+        '8080': rom_8080.rom_8080,
         '8085': rom_8085.rom_8085,
         'z80':  rom_z80.rom_z80}
 
 # Similarly, these maps provide the default label maps and entry points
 # for each CPU type:
-default_labels = {'8080': rom_8080.default_labels,
+default_labels = {'1802': rom_1802.default_labels,
+                  '8080': rom_8080.default_labels,
                   '8085': rom_8085.default_labels,
                   'z80':  rom_z80.default_labels}
 
-default_entries = {'8080': rom_8080.default_entries,
+default_entries = {'1802': rom_1802.default_entries,
+                   '8080': rom_8080.default_entries,
                    '8085': rom_8085.default_entries,
                    'z80':  rom_z80.default_entries}
 
-default_ports = {'8080': rom_8080.default_ports,
+default_ports = {'1802': rom_1802.default_ports,
+                 '8080': rom_8080.default_ports,
                  '8085': rom_8085.default_ports,
                  'z80':  rom_z80.default_ports}
 

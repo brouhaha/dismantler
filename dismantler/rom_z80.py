@@ -51,6 +51,8 @@ class rom_z80(rom_base.rom_base):
     """ROM image containing Zilog z80 code to be disassembled."""
 
 
+    description = 'Zilog Z80 (DD and FD prefixed instructions not implemented yet)'
+
     # Pre-defined names for special auto-created labels
     special_labels = default_labels
 
