@@ -72,7 +72,7 @@ if __name__ == '__main__':
     parser.add_argument('--list_cpus', action='store_true',
                         help='List supported CPU types and exit.')
 
-    parser.add_argument('-c', '--cpu', action='store', required=True,
+    parser.add_argument('-c', '--cpu', action='store',
                         metavar='CPU',
                         choices=dismantler.cpus,
                         help='(REQUIRED) Specify CPU type.')
@@ -126,17 +126,24 @@ if __name__ == '__main__':
                         help='Output assembler source format instead of listing format.')
 
     parser.add_argument('bin_file', action='store', type=argparse.FileType('rb'),
-                        help='(REQUIRED) Binary file containing image of ROM to be disassembled.')
+                        nargs='?', default=None,
+                        help='Binary file containing image of ROM to be disassembled.')
 
     # Parse command line arguments
     args = parser.parse_args()
 
     # List CPUs and exit if --list_cpus is specified
     if (args.list_cpus == 1):
-        print 'Supported CPUs:'
+        print('Supported CPUs:')
         for cpu in dismantler.cpus:
-            print '  ' + cpu
+            print('  ' + cpu)
         exit(0)
+
+    # Make sure necessary arguments are present
+    if args.bin_file is None:
+        raise ValueError('Error: You need to specify a binnary file to be disassembled.')
+    if args.cpu is None:
+        raise ValueError('Error: You need to specify the CPU type with the -c/--cpu flag.')
 
     # Use default label map if auto label mode is requested
     # and there are no user-provided labels.

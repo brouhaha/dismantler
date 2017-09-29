@@ -21,8 +21,7 @@
 
 """Define abstract base class for ROM image to be disassembled."""
 
-import util
-import exceptions
+from . import util
 
 # Classifications of contents of a memory location:
 # type_unknown:     Location has not yet been classified.
@@ -34,7 +33,7 @@ import exceptions
 
 type_unknown, type_instruction, type_operand, type_data8, \
   type_data16H, type_data16L, type_vector16H, type_vector16L, \
-  type_error = range(9)
+  type_error = list(range(9))
 
 valid_types = [type_unknown, type_instruction, type_operand, type_data8,
                type_data16H, type_data16L, type_vector16H, type_vector16L,
@@ -216,7 +215,7 @@ class rom_base(object):
         typically by calling the appropriate _set_data* member function.
         """
 
-        raise exceptions.NotImplementedError, 'Virtual function must be defined by inheritor.'
+        raise NotImplementedError('Virtual function must be defined by inheritor.')
 
     def set_data16(self, address, access_addr=None):
         """Classify location as 16-bit data.
@@ -225,7 +224,7 @@ class rom_base(object):
         typically by calling the appropriate _set_data* member function.
         """
 
-        raise exceptions.NotImplementedError, 'Virtual function must be defined by inheritor.'
+        raise NotImplementedError('Virtual function must be defined by inheritor.')
 
     def set_vector(self, address, access_addr=None):
         """Classify location as containing a pointer to executable code and return contents.
@@ -234,7 +233,7 @@ class rom_base(object):
         typically by calling the appropriate _set_data* member function.
         """
 
-        raise exceptions.NotImplementedError, 'Virtual function must be defined by inheritor.'
+        raise NotImplementedError('Virtual function must be defined by inheritor.')
 
     def disasm_single(self, address, create_label=True):
         """Disassemble a single instruction.
@@ -252,7 +251,7 @@ class rom_base(object):
           which halt execution.
         """
 
-        raise exceptions.NotImplementedError, 'Virtual function must be defined by inheritor.'
+        raise NotImplementedError('Virtual function must be defined by inheritor.')
     
         
 
@@ -303,7 +302,7 @@ class rom_base(object):
             if (entry>=valid_min) and (entry<=valid_max) and (entry not in breakpoints):
 
                 if (entry < self.base_address) or (entry > self.max_address):
-                    raise exceptions.IndexError, 'Disassembly address outside of valid range.'
+                    raise IndexError('Disassembly address outside of valid range.')
 
                 next_addr_list = self.disasm_single(entry, create_labels)
             
@@ -437,7 +436,7 @@ class rom_base(object):
 
             # Perform label substitution on destination addresses
             dest_list = {}
-            for dest in self.xref.keys():
+            for dest in list(self.xref.keys()):
                 dest_list[self.lookup_address(dest, False)] = dest
 
             # Now sort by destination label/address strings
@@ -463,7 +462,7 @@ class rom_base(object):
         Implementation may be as simple as calling one of the _listing* members functions.
         """
 
-        raise exceptions.NotImplementedError, 'Virtual function must be defined by inheritor.'
+        raise NotImplementedError('Virtual function must be defined by inheritor.')
     
     def _lookup_a16_intel(self, address, create_label=True, prefix='L_'):
         """Look up address in label map, returning symbol name or hex string.
@@ -521,7 +520,7 @@ class rom_base(object):
         typically by calling the appropriate _lookup_a* member function.
         """
 
-        raise exceptions.NotImplementedError, 'Virtual function must be defined by inheritor.'
+        raise NotImplementedError('Virtual function must be defined by inheritor.')
 
 
     def lookup_port(self, address, create_label=True, prefix='L_'):
@@ -531,7 +530,7 @@ class rom_base(object):
         typically by calling the appropriate _lookup_port* member function.
         """
 
-        raise exceptions.NotImplementedError, 'Virtual function must be defined by inheritor.'
+        raise NotImplementedError('Virtual function must be defined by inheritor.')
 
 
     def add_xref(self, source, dest):

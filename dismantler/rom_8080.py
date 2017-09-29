@@ -21,9 +21,8 @@
 
 """Define class for ROM image containing Intel 8080 code to be disassembled."""
 
-import rom_base
-import util
-import exceptions
+from . import rom_base
+from . import util
 
 _alu  = ['ADD', 'ADC', 'SUB ', 'SBC', 'ANA', 'XRA', 'ORA', 'CMP']
 _alui = ['ADI', 'ACI', 'SUI ', 'SBI', 'ANI', 'XRI', 'ORI', 'CPI']

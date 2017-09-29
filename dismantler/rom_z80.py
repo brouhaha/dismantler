@@ -21,9 +21,8 @@
 
 """Define class for ROM image containing Intel z80 code to be disassembled."""
 
-import rom_base
-import util
-import exceptions
+from . import rom_base
+from . import util
 
 _alu = ['ADD  A, ', 'ADC  A, ', 'SUB  ', 'SBC  A, ', 'AND  ', 'XOR  ', 'OR   ', 'CP   ']
 _bli = [['LDI',  'CPI',  'INI',  'OUTI'],
@@ -405,7 +404,7 @@ class rom_z80(rom_base.rom_base):
                         self.add_xref(address, word)
                     elif p == 1:
                     # DD prefix
-                        raise exceptions.NotImplementedError, 'DD prefixed instructions not implemented yet.'
+                        raise NotImplementedError('DD prefixed instructions not implemented yet.')
 ################################
 
                     elif p == 2:
@@ -504,7 +503,7 @@ class rom_z80(rom_base.rom_base):
 
                     else:
                     # FD prefix
-                        raise exceptions.NotImplementedError, 'FD prefixed instructions not implemented yet.'
+                        raise NotImplementedError('FD prefixed instructions not implemented yet.')
 ################################
 
             elif z == 6:
