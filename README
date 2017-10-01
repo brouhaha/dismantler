@@ -42,7 +42,7 @@ INTRODUCTION
     will end, specify addresses to be data, etc. in order to guide the
     disassembly process.
 
-    While the currently-supported lsit of CPUs is small, dismantler is
+    While the currently-supported list of CPUs is small, dismantler is
     designed to be easily extensible to support new CPUs.
 
 SUPPORTED CPUS

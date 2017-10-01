@@ -37,7 +37,7 @@ _op3x = ['BR',   'BQ',   'BZ',   'BDF',  'B1',   'B2',   'B3',   'B4',
          'SKP',  'BNQ',  'BNZ',  'BNF',  'BN1',  'BN2',  'BN3',  'BN4']
 
 _op7x = ['RET',  'DIS',  'LDXA', 'STXD', 'ADC',  'SDB',  'SHRC', 'SMB',
-         'SAV',  'MARK', 'SEQ',  'REQ',  'ADDI', 'SDBI', 'SHLC', 'SMBI']
+         'SAV',  'MARK', 'REQ',  'SEQ',  'ADCI', 'SDBI', 'SHLC', 'SMBI']
 
 _opCx = ['LBR',  'LBQ',  'LBZ',  'LBDF', 'NOP',  'LSNQ', 'LSNZ', 'LSNF',
          'LSKP', 'LBNQ', 'LBNZ', 'LBNF', 'LSIE', 'LSQ',  'LSZ',  'LSDF']
@@ -135,15 +135,18 @@ class rom_1802(rom_base.rom_base):
 
         if self.data_type[idx] is rom_base.type_operand:
             # Trying to disassemble another instruction's operand
-            self.comments[idx] += 'WARNING: Disassembling an operand. '
+            self.comments[idx] += 'WARNING: Tried to disassemble an operand. '
+            return []
 
         if self.data_type[idx] in rom_base.data_types:
             # Trying to disassemble a data byte
-            self.comments[idx] += 'WARNING: Disassembling data. '
+            self.comments[idx] += 'WARNING: Tried to disassemble data. '
+            return []
 
         if self.data_type[idx] is rom_base.type_error:
             # Trying to disassemble an error
-            self.comments[idx] += 'WARNING: Disassembling location flagged as error. '
+            self.comments[idx] += 'WARNING: Tried to disassemble location flagged as error. '
+            return []
 
         self.data_type[idx] = rom_base.type_instruction
         opcode     = self.rom[idx]
